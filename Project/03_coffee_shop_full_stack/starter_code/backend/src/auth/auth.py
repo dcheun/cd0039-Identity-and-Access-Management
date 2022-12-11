@@ -1,5 +1,5 @@
 import json
-from flask import request, _request_ctx_stack
+from flask import request, _request_ctx_stack, abort
 from functools import wraps
 from jose import jwt
 from urllib.request import urlopen
@@ -32,7 +32,7 @@ def get_token_auth_header():
         raise AuthError({
             'code': 'unauthorized',
             'description': 'Authorization required.'
-        })
+        }, 401)
 
     auth_header = request.headers['Authorization']
     header_parts = auth_header.split(' ')
@@ -119,7 +119,7 @@ def verify_decode_jwt(token):
         raise AuthError({
             'code': 'invalid_header',
             'description': 'Unable to find the appropriate key.'
-        })
+        }, 400)
 
     try:
         payload = jwt.decode(
@@ -159,9 +159,14 @@ def requires_auth(permissions=''):
     def requires_auth_decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            token = get_token_auth_header()
-            payload = verify_decode_jwt(token)
-            check_permissions(permissions, payload)
+            try:
+                token = get_token_auth_header()
+                payload = verify_decode_jwt(token)
+                check_permissions(permissions, payload)
+            except AuthError as e:
+                abort(e.status_code, e.error.get('description', 'Unknown error'))
+            except Exception:
+                abort(422, 'Error processing authentication.')
             return f(payload, *args, **kwargs)
 
         return wrapper
