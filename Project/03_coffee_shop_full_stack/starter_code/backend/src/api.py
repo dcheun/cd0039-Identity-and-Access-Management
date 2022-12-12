@@ -75,24 +75,30 @@ def get_drinks_detail(payload):
 def create_drink(payload):
     body = request.get_json()
     new_data = {}
+
     # Check for required fields.
     for field in ['title', 'recipe']:
         new_data[field] = body.get(field)
         if not new_data[field]:
             abort(400, f'Missing required field: {field}')
+
+    recipe_list = body.get('recipe')
+    if not isinstance(recipe_list, list):
+        abort(400, 'Recipe should be a list.')
     # Check for the long format.
     required_recipe_fields = {'name', 'color', 'parts'}
-    missing_recipe_fields = required_recipe_fields.difference(new_data['recipe'])
-    if missing_recipe_fields:
-        abort(400, f'Missing required recipe field(s): {", ".join(missing_recipe_fields)}')
-    for k, v in new_data['recipe'].items():
-        if not v:
-            abort(400, f'Missing required recipe field: {k}')
+    for recipe in recipe_list:
+        missing_recipe_fields = required_recipe_fields.difference(recipe)
+        if missing_recipe_fields:
+            abort(400, f'Missing required recipe field(s): {", ".join(missing_recipe_fields)}')
+        for k, v in recipe.items():
+            if not v:
+                abort(400, f'Recipe field cannot be empty: {k}')
 
     try:
         drink = Drink(
             title=new_data['title'],
-            recipe=json.dumps([new_data['recipe']])
+            recipe=json.dumps(recipe_list)
         )
         drink.insert()
         return jsonify({
@@ -124,27 +130,34 @@ def update_drink(payload, drink_id):
     for field in ['title', 'recipe']:
         if field in body and not body.get(field):
             abort(400, f'A value is required for field: {field}')
+
     # Check for the long format.
     if 'recipe' in body:
+
+        recipe_list = body.get('recipe')
+        if not isinstance(recipe_list, list):
+            abort(400, 'Recipe should be a list.')
+        # Check for the long format.
         required_recipe_fields = {'name', 'color', 'parts'}
-        missing_recipe_fields = required_recipe_fields.difference(body['recipe'])
-        if missing_recipe_fields:
-            abort(400, f'Missing required recipe field(s): {", ".join(missing_recipe_fields)}')
-        for k, v in body['recipe'].items():
-            if not v:
-                abort(400, f'Missing required recipe field: {k}')
+        for recipe in recipe_list:
+            missing_recipe_fields = required_recipe_fields.difference(recipe)
+            if missing_recipe_fields:
+                abort(400, f'Missing required recipe field(s): {", ".join(missing_recipe_fields)}')
+            for k, v in recipe.items():
+                if not v:
+                    abort(400, f'Recipe field cannot be empty: {k}')
+
+    drink = Drink.query.filter(Drink.id == drink_id).one_or_none()
+
+    if drink is None:
+        abort(404)
 
     try:
-        drink = Drink.query.filter(Drink.id == drink_id).one_or_none()
-
-        if drink is None:
-            abort(404)
-
         if 'title' in body:
             drink.title = body['title']
 
         if 'recipe' in body:
-            drink.recipe = json.dumps(body['recipe'])
+            drink.recipe = json.dumps(recipe_list)
         drink.update()
 
         return jsonify({
