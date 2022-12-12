@@ -34,6 +34,20 @@ Ionic uses a configuration file to manage environment variables. These variables
 
 ## Running Your Frontend in Dev Mode
 
+> _IMPORTANT_: It appears using a more recent `node` version causes the application to error with `ERR_OSSL_EVP_UNSUPPORTED`. As a workaround, you may need to set a `node` environment variable to allow legacy `openssl` option for it to run.
+
+Example command in Windows cmd:
+
+```bash
+set NODE_OPTIONS=--openssl-legacy-provider
+```
+
+Example command in Linux:
+
+```bash
+export NODE_OPTIONS=--openssl-legacy-provider
+```
+
 Ionic ships with a useful development server which detects changes and transpiles as you work. The application is then accessible through the browser on a localhost port. To run the development server, cd into the `frontend` directory and run:
 
 ```bash
@@ -53,4 +67,4 @@ The authentication system used for this project is Auth0. `./src/app/services/au
 
 ### Authorization
 
-The Auth0 JWT includes claims for permissions based on the user's role within the Auth0 system. This project makes use of these claims using the `auth.can(permission)` method which checks if particular permissions exist within the JWT permissions claim of the currently logged in user. This method is defined in  `./src/app/services/auth.service.ts` and is then used to enable and disable buttons in `./src/app/pages/drink-menu/drink-form/drink-form.html`.
+The Auth0 JWT includes claims for permissions based on the user's role within the Auth0 system. This project makes use of these claims using the `auth.can(permission)` method which checks if particular permissions exist within the JWT permissions claim of the currently logged in user. This method is defined in `./src/app/services/auth.service.ts` and is then used to enable and disable buttons in `./src/app/pages/drink-menu/drink-form/drink-form.html`.
